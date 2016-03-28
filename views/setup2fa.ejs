@@ -1,0 +1,44 @@
+<% include header.ejs %>
+    <div>
+      <h1>2FA</h1>
+      <p>Welcome to the 2FA Demo. Now you get to set up the 2FA methods</p>
+      <h2>Google Authenticator (TOTP)</h2>
+      <p>This uses an app on your phone (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> & <a href="https://itunes.apple.com/gb/app/google-authenticator/id388497605?mt=8">iPhone</a>) to generate one time passwords based on the time.</p>
+      <button id="setupGoogle">Google</button>
+      <h2>Fido U2F</h2>
+      <p>This method uses a USB token that holds a certificate to generate a signed token on request</p>
+      <button>Fido U2F</button>
+    </div>
+    <div id="workspace">
+    </div>
+    <script type="application/javascript">
+      var xhr = new XMLHttpRequest();
+      var googleButton = document.getElementById('setupGoogle');
+      googleButton.onclick = function setupGoogle(){
+        xhr.open('GET', '/setupG2FA',true);
+        xhr.onreadystatechange = function () {
+          if(xhr.readyState == 4 && xhr.status == 200) {
+            var message = document.createElement('p');
+            message.innerHTML = 'Scan the QR code with the app then enter the code in the box and hit submit';
+            document.getElementById('workspace').appendChild(message);
+            var qrurl = xhr.responseText;
+            var image = document.createElement('img');
+            image.setAttribute('src', qrurl);
+            document.getElementById('workspace').appendChild(image);
+            var code = document.createElement('input');
+            code.setAttribute('type', 'number');
+            code.setAttribute('id', 'code');
+            document.getElementById('workspace').appendChild(code);
+            var submitG2FA = document.createElement('button');
+            submitG2FA.setAttribute('id', 'submitG2FA');
+            submitG2FA.innerHTML = 'Submit';
+            document.getElementById('workspace').appendChild(submitG2FA);
+
+          } else if (xhr.readyState == 4 && xhr.status !== 200) {
+          	document.getElementById('workspace').innerHTML ="error setting up Google 2FA";
+          }
+        };
+        xhr.send();
+      }
+    </script>
+<% include footer.ejs %>

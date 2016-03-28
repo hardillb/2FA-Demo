@@ -1,0 +1,5 @@
+---
+applications:
+- name: bjh-2fa-demo
+  memory: 64M
+  command: node index.js

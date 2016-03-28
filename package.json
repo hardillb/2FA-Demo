@@ -1,0 +1,27 @@
+{
+  "name": "u2f-webapp",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "hardillb@gmail.com",
+  "license": "BSD",
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.1",
+    "ejs": "^2.4.1",
+    "express": "^4.13.4",
+    "express-session": "^1.13.0",
+    "mongoose": "^4.4.10",
+    "morgan": "^1.7.0",
+    "node-u2f": "^0.3.0",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^4.0.0",
+    "passport-totp": "0.0.2",
+    "thirty-two": "^1.0.1"
+  }
+}

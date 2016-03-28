@@ -1,0 +1,14 @@
+<% include header.ejs %>
+  <div id="choice">
+  	<h1>Select 2FA method</h1>
+  	<button>Google TOTP</button>
+  	<button>Fido U2F</button>
+  </div>
+  <div id="google">
+  	<input id="code" type='text'>
+  	<button id="submitG2FA">Submit</button>
+  </div>
+  <div id="fido">
+  </div>
+  <script src="static/u2f-api.js" type="text/javascript" ></script>
+<% include footer.ejs %>

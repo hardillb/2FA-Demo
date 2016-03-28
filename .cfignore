@@ -1,0 +1,3 @@
+data/*
+mongo.sh
+node_modules/*

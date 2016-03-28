@@ -21,7 +21,7 @@ var U2F_Reg = require('./models/u2f');
 
 var port = (process.env.VCAP_APP_PORT || process.env.PORT ||3000);
 var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
-var mongo_url = 'mongodb://localhost/users';
+var mongo_url = (process.env.MONGO_URL || 'mongodb://localhost/users');
 
 if (process.env.VCAP_SERVICES) {
 	var services = JSON.parse(process.env.VCAP_SERVICES);
@@ -282,6 +282,6 @@ if (app_id.match(/^https:\/\/localhost:/)) {
 
 
 server.listen(port, host, function(){
-	console.log('Example app listening on  %s:%d!', host, port);
+	console.log('App listening on  %s:%d!', host, port);
 });
 

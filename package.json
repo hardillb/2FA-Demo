@@ -1,13 +1,18 @@
 {
   "name": "u2f-webapp",
   "version": "0.0.0",
-  "description": "",
+  "description": "A basic NodeJS/ExpressJS app that uses 2FA, both Google TOTP and Fido U2F",
+  "licence": "Apache-2.0",
+  "repository":{
+    "type": "git",
+    "url": "https://github.com/hardillb/2FA-Demo"
+  },
+  "private": true,
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "hardillb@gmail.com",
-  "license": "BSD",
   "dependencies": {
     "body-parser": "^1.15.0",
     "connect-flash": "^0.1.1",

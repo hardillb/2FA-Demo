@@ -1,0 +1,14 @@
+body {
+	margin: auto;
+	width: 60%;
+}
+
+#google {
+	padding: 10px;
+	visibility: hidden;
+}
+
+#fido {
+	padding: 10px;
+	visibility: hidden;
+}

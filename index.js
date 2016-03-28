@@ -52,6 +52,7 @@ app.set('view engine', 'ejs');
 
 app.use(morgan("default"));
 app.use(cookieParser());
+app.use(flash());
 app.use(session({
   // genid: function(req) {
   //   return genuuid() // use UUIDs for session IDs
@@ -65,6 +66,22 @@ app.use(bodyParser.urlencoded({ extended: false }));
 //app.use(flash);
 app.use(passport.initialize());
 app.use(passport.session());
+
+function requireHTTPS(req, res, next) {
+	if (req.get('X-Forwarded-Proto') === 'http') {
+        //FYI this should work for local development as well
+        var url = 'https://' + req.get('host');
+        if (req.get('host') === 'localhost') {
+        	url += ':' + port;
+        }
+        url  += req.url;
+        return res.redirect(url); 
+    }
+    next();
+}
+
+app.use(requireHTTPS);
+
 app.use('/',express.static('static'));
 
 
@@ -83,19 +100,21 @@ passport.deserializeUser(Account.deserializeUser());
 mongoose.connect(mongo_url);
 
 app.get('/', function(req,res){
-	res.render('index');
+	res.render('index', { message: req.flash('info') });
 });
 
 app.get('/login', function(req,res){
-	res.render('login');
+	res.render('login',{ message: req.flash('info') });
 });
 
-app.post('/login', passport.authenticate('local', { failureRedirect: '/login', failureFlash: true }), function(req,res){
-	res.redirect('/2faCheck');
+app.post('/login', passport.authenticate('local', { failureRedirect: '/login', successRedirect: '/2faCheck', failureFlash: true }));
+
+app.get('/2faCheck', ensureAuthenticated, function(req,res){
+	res.render('check2fa',{ message: req.flash('info') });
 });
 
 app.get('/newUser', function(req,res){
-	res.render('register');
+	res.render('register', { message: req.flash('info') });
 });
 
 app.post('/newUser', function(req,res){
@@ -114,11 +133,7 @@ app.post('/newUser', function(req,res){
 });
 
 app.get('/setup2FA', ensureAuthenticated, function(req,res){
-	res.render('setup2fa');
-});
-
-app.get('/2faCheck', function(req,res){
-	res.render('check2fa');
+	res.render('setup2fa',{ message: req.flash('info') });
 });
 
 app.get('/setupG2FA', ensureAuthenticated, function(req,res){
@@ -151,13 +166,20 @@ app.post('/loginG2FA', ensureAuthenticated, passport.authenticate('totp'), funct
 });
 
 app.get('/registerU2F', ensureAuthenticated, function(req,res){
-	var registerRequest = u2f.startRegistration(app_id);
-	req.session.registerRequest = registerRequest;
-	res.send(registerRequest);
+	try{
+		var registerRequest = u2f.startRegistration(app_id);
+		req.session.registerRequest = registerRequest;
+		res.send(registerRequest);
+	} catch (err) {
+		console.log(err);
+		res.status(400).send();
+	}
+	
 });
 
 app.post('/registerU2F', ensureAuthenticated, function(req,res){
 	var registerResponse = req.body;
+	console.log(registerRequest);
 	var registerRequest = req.session.registerRequest;
 	var user = req.user.username;
 	try {
@@ -166,11 +188,17 @@ app.post('/registerU2F', ensureAuthenticated, function(req,res){
 		reg.save(function(err,r){
 
 		});
+		res.send();
 	} catch (err) {
 		console.log(err);
-		reg.status(400).send();
+		res.status(400).send();
 	}
 });
+
+// function debug(req,res,next) {
+// 	console.log("DEBUG-" + req.body.code);
+// 	return next();
+// }
 
 app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 	U2F_Reg.findOne({username: req.user.username}, function(err, reg){
@@ -178,7 +206,7 @@ app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 			res.status(400).send(err);
 		} else {
 			if (reg !== null) {
-				var signRequest = u2f.startAuthentication(appId, reg.deviceRegistration);
+				var signRequest = u2f.startAuthentication(app_id, reg.deviceRegistration);
 				req.session.signrequest = signRequest;
 				req.session.deviceRegistration = reg.deviceRegistration;
 				res.send(signRequest);
@@ -199,6 +227,16 @@ app.post('/authenticateU2F', ensureAuthenticated, function(req,res){
 		console.log(err);
 		res.status(400).send();
 	}
+});
+
+app.get('/logout', function(req,res){
+	req.logout();
+	req.session.secondFactor = undefined;
+	res.redirect('/login')
+});
+
+app.get('/user', ensureAuthenticated, ensure2fa, function(req, res) {
+	res.render('user',{name: req.user.username, message: req.flash('info')});
 });
 
 function ensureAuthenticated(req,res,next) {

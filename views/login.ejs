@@ -1,9 +1,11 @@
 <% include header.ejs %>
     <div id="login">
+      <form method="POST" action="/login">
       <label for="username">Username</label>
-      <input type="text" id="username"/>
+      <input type="text" id="username" name="username"/>
       <label for="password">Password:</label>
-      <input type="password" id="password"/>
-      <button id="loginButton">Login</button>
+      <input type="password" id="password" name="password"/>
+      <input type="submit" value="Login">
+      </form>
     </div>
 <% include footer.ejs %>

@@ -2,19 +2,32 @@
     <div>
       <h1>2FA</h1>
       <p>Welcome to the 2FA Demo. Now you get to set up the 2FA methods</p>
+      <p>Once you have set at least one of these up sucessfully you can logout and then try and log back in</p>
       <h2>Google Authenticator (TOTP)</h2>
       <p>This uses an app on your phone (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> & <a href="https://itunes.apple.com/gb/app/google-authenticator/id388497605?mt=8">iPhone</a>) to generate one time passwords based on the time.</p>
       <button id="setupGoogle">Google</button>
       <h2>Fido U2F</h2>
-      <p>This method uses a USB token that holds a certificate to generate a signed token on request</p>
-      <button>Fido U2F</button>
+      <p>This method uses a USB token that holds a certificate to generate a signed token on request. At the moment this only works in Chrome (but there is work to create a plugin for </p>
+      <p>Plug your token into the machine, press the button below and follow the instructions</p>
+      <button id="setupFido">Fido U2F</button>
     </div>
-    <div id="workspace">
+    <div>
+      <h3>Console</h3>
+      <div id="workspace">
+      </div>
     </div>
     <script type="application/javascript">
+      function clearWorkspace() {
+        var element = document.getElementById('workspace');
+        while (element.firstChile) {
+          element.removeChild(element.firstChild);
+        }
+      }
+
       var xhr = new XMLHttpRequest();
       var googleButton = document.getElementById('setupGoogle');
-      googleButton.onclick = function setupGoogle(){
+      googleButton.onclick = function setupGoogle() {
+        clearWorkspace();
         xhr.open('GET', '/setupG2FA',true);
         xhr.onreadystatechange = function () {
           if(xhr.readyState == 4 && xhr.status == 200) {
@@ -33,6 +46,23 @@
             submitG2FA.setAttribute('id', 'submitG2FA');
             submitG2FA.innerHTML = 'Submit';
             document.getElementById('workspace').appendChild(submitG2FA);
+            submitG2FA.onclick = function() {
+              var pass = document.getElementById('code').value;
+              console.log(pass);
+              var xhr2 = new XMLHttpRequest();
+              xhr2.open('POST', '/loginG2FA', true);
+              xhr2.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+              xhr2.onreadystatechange = function() {
+                if (xhr2.readyState == 4 && xhr2.status == 200) {
+                  clearWorkspace();
+                  document.getElementById('workspace').innerHTML='Google Authenticator all setup';
+                } else if (xhr2.readyState == 4 && xhr2.status !== 200) {
+                  clearWorkspace();
+                  document.getElementById('workspace').innerHTML='Error setting up Google Authenticator';
+                }
+              }
+              xhr2.send('code='+pass);
+            }
 
           } else if (xhr.readyState == 4 && xhr.status !== 200) {
           	document.getElementById('workspace').innerHTML ="error setting up Google 2FA";
@@ -40,5 +70,32 @@
         };
         xhr.send();
       }
+
+      var fidoButton = document.getElementById('setupFido');
+      fidoButton.onclick = function setupFido() {
+        clearWorkspace();
+      	xhr.open('GET', '/registerU2F', true);
+      	xhr.onreadystatechange = function () {
+      	  if(xhr.readyState == 4 && xhr.status == 200) {
+      	    var registerRequest = [JSON.parse(xhr.responseText)];
+      	    console.log(registerRequest);
+      	    u2f.register(registerRequest,[], function(data){
+      	      var xhr2 = new XMLHttpRequest();
+      	      xhr2.open('POST', '/registerU2F', true);
+      	      xhr2.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      	      xhr2.onreadystatechange = function() {
+      	        if (xhr2.readyState == 4 && xhr2.status == 200) {
+      	          document.getElementById('workspace').innerHTML ="Fido U2F Token enabled";
+      	        } else if (xhr2.readyState == 4 && xhr2.status !== 200) {
+      	          document.getElementById('workspace').innerHTML ="error setting up Fido U2F token";
+      	        }
+      	      }
+      	      xhr2.send(JSON.stringify(data));
+      	    });
+      	  }
+      	};
+      	xhr.send();
+      }
     </script>
+    <script src="u2f-api.js"></script>
 <% include footer.ejs %>

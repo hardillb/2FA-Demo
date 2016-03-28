@@ -6,7 +6,18 @@
 </head>
 <body>
 	<h1>2FA Auth Demo</h1>
-	<p>A demo that registers users and lets them set up Google Authenticator (TOTP) and Fido U2F tokens as 2FA</p>
+	<p>A demo that registers users and lets them set up Google Authenticator (<acronym title="Time-based One Time Password">TOTP</acronym>) and Fido U2F tokens as <acronym title="Two Factor Authentication">2FA</acronym></p>
+	<h2>Google Authenticator</h2>
+	<div style="float: right"><a title="By Louisxyz (Own work) [CC BY-SA 4.0 (http://creativecommons.org/licenses/by-sa/4.0)], via Wikimedia Commons" href="https://commons.wikimedia.org/wiki/File%3AScreenshot_of_Google_Authenticator.png"><img width="256" alt="Screenshot of Google Authenticator" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Screenshot_of_Google_Authenticator.png/256px-Screenshot_of_Google_Authenticator.png"/></a></div>
+	<p>This uses an app on your phone (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> & <a href="https://itunes.apple.com/gb/app/google-authenticator/id388497605?mt=8">iPhone</a>) to generate one time passwords based on the current time.</p>
+	<p>The application can generate codes for multiple different site at a time and can easily be configured by scanning a QR code or typing in a short sequence of characters.</p>
+	<h2>Fido U2F</h2>
+	<p>There are a number of different manufacturers making U2F tokens.</p>
+	<ul>
+		<li><a href="https://www.yubico.com/">Yubico</a> have a range of devices including the <a href="http://amzn.to/1VPLDfa">FIDO U2F Security Key</a> and the <a href="http://amzn.to/1VPLQiD">YubiKey 4 Nano</a></li>
+		<li><a href="https://www.hypersecu.com/">Hypersecu</a> have the <a href="http://amzn.to/1VPLvMR">HyperFIDO</a></li>
+		<li><a href="http://sk.happlink.com/plugup/en/">Plug-up</a> have their <a href="http://amzn.to/21OMcpd">FIDO U2F Security Key</a></li>
+	</ul>
 	<p>Register new user by clicking <a href="/newUser">here</a></p>
 </body>
 </html>

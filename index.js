@@ -1,4 +1,6 @@
 var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var express = require('express');
 var u2f = require('node-u2f');
 var session = require('express-session');
@@ -15,10 +17,10 @@ var flash = require('connect-flash');
 
 var Account = require('./models/account');
 var G2FA = require('./models/g2fa');
-var U2F_Reg = require('./modles/u2f');
+var U2F_Reg = require('./models/u2f');
 
-var port = (process.env.VCAP_APP_PORT || 3000);
-var host = (process.env.VCAP_APP_HOST || 'localhost');
+var port = (process.env.VCAP_APP_PORT || process.env.PORT ||3000);
+var host = (process.env.VCAP_APP_HOST || '0.0.0.0');
 var mongo_url = 'mongodb://localhost/users';
 
 if (process.env.VCAP_SERVICES) {
@@ -32,6 +34,16 @@ if (process.env.VCAP_SERVICES) {
 			console.log("no database found");
 		}
 	}
+}
+
+var app_id = 'https://localhost:' + port;
+
+if (process.env.VCAP_APPLICATION) {
+	var application = JSON.parse(process.env.VCAP_APPLICATION);
+
+	var app_uri = application['application_uris'][0];
+
+	app_id = 'https://' + app_uri;
 }
 
 var app = express();
@@ -135,23 +147,29 @@ app.get('/setupG2FA', ensureAuthenticated, function(req,res){
 
 app.post('/loginG2FA', ensureAuthenticated, passport.authenticate('totp'), function(req, res){
 	req.session.secondFactor = 'g2fa';
+	res.send();
 });
 
 app.get('/registerU2F', ensureAuthenticated, function(req,res){
-	var registerRequest = u2f.startRegistration('http://localhost:3000');
+	var registerRequest = u2f.startRegistration(app_id);
 	req.session.registerRequest = registerRequest;
-	send(registerRequest);
+	res.send(registerRequest);
 });
 
 app.post('/registerU2F', ensureAuthenticated, function(req,res){
 	var registerResponse = req.body;
 	var registerRequest = req.session.registerRequest;
 	var user = req.user.username;
-	var registration = u2f.finishRegistration(registerRequest,registerResponse);
-	var reg = new U2F_Reg({username: user, deviceRegistration: registration });
-	reg.save(function(err,r){
+	try {
+		var registration = u2f.finishRegistration(registerRequest,registerResponse);
+		var reg = new U2F_Reg({username: user, deviceRegistration: registration });
+		reg.save(function(err,r){
 
-	});
+		});
+	} catch (err) {
+		console.log(err);
+		reg.status(400).send();
+	}
 });
 
 app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
@@ -162,6 +180,7 @@ app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 			if (reg !== null) {
 				var signRequest = u2f.startAuthentication(appId, reg.deviceRegistration);
 				req.session.signrequest = signRequest;
+				req.session.deviceRegistration = reg.deviceRegistration;
 				res.send(signRequest);
 			}
 		}
@@ -169,7 +188,17 @@ app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 });
 
 app.post('/authenticateU2F', ensureAuthenticated, function(req,res){
-
+	var signResponse = req.body;
+	var signRequest = req.session.signrequest;
+	var deviceRegistration = req.session.deviceRegistration;
+	try {
+		var result = u2f.finishAuthentication(signRequest, signResponse, deviceRegistration);
+		req.session.secondFactor = 'u2f';
+		res.send();
+	} catch (err) {
+		console.log(err);
+		res.status(400).send();
+	}
 });
 
 function ensureAuthenticated(req,res,next) {
@@ -205,6 +234,15 @@ function getRandomInt(min, max) {
 
 
 var server = http.Server(app);
+if (app_id.match(/^https:\/\/localhost:/)) {
+	var options = {
+		key: fs.readFileSync('server.key'),
+		cert: fs.readFileSync('server.crt')
+	};
+	server = https.createServer(options, app);
+} 
+
+
 server.listen(port, host, function(){
 	console.log('Example app listening on  %s:%d!', host, port);
 });

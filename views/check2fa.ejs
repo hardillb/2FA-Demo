@@ -30,23 +30,31 @@
         if (xhr.readyState == 4 && xhr.status == 200) {
           var signRequests = [JSON.parse(xhr.responseText)];
           console.log(signRequests[0]);
-          u2f.sign(signRequests,function(data){
-            console.log(data);
-      	    var xhr2 = new XMLHttpRequest();
-            xhr2.open('POST', '/authenticateU2F', true);
-            xhr2.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-            xhr2.onreadystatechange = function() {
-              if (xhr2.readyState == 4 && xhr2.status == 200) {
-                //redirect to /user
-                window.location = '/user';
-              } else if (xhr2.readyState == 4 && xhr2.status !== 200) {
-                //redirect to /logout
-                //window.location = '/logout';
-                console.log("failed");
+          try {
+            u2f.sign(signRequests,function(data){
+              console.log(data);
+              if (!data.errorCode) {
+      	        var xhr2 = new XMLHttpRequest();
+                xhr2.open('POST', '/authenticateU2F', true);
+                xhr2.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                xhr2.onreadystatechange = function() {
+                  if (xhr2.readyState == 4 && xhr2.status == 200) {
+                    //redirect to /user
+                    window.location = '/user';
+                  } else if (xhr2.readyState == 4 && xhr2.status !== 200) {
+                    //redirect to /logout
+                    //window.location = '/logout';
+                    console.log("failed");
+                  }
+                };
+                xhr2.send(JSON.stringify(data));
+              } else {
+                document.getElementById('fido').innerHTML = "Token error: " + data.errorMessage;
               }
-            };
-            xhr2.send(JSON.stringify(data));
-          },3000);
+            },3000);
+          } catch (err) {
+            console.log("Catch err - " + err );
+          }
         }
       }
       xhr.send();

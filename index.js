@@ -2,7 +2,8 @@ var http = require('http');
 var https = require('https');
 var fs = require('fs');
 var express = require('express');
-var u2f = require('node-u2f');
+//var u2f = require('node-u2f');
+var u2f = require('u2f');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var passport = require('passport');
@@ -46,20 +47,25 @@ if (process.env.VCAP_APPLICATION) {
 	app_id = 'https://' + app_uri;
 }
 
+var cookieSecret = 'zsemjy';
+
 var app = express();
 
 app.set('view engine', 'ejs');
-
-app.use(morgan("default"));
-app.use(cookieParser());
+app.set('trust proxy', 1);
+app.use(morgan("combined"));
+app.use(cookieParser(cookieSecret));
 app.use(flash());
 app.use(session({
   // genid: function(req) {
   //   return genuuid() // use UUIDs for session IDs
   // },
-  secret: 'zsemjy',
+  secret: cookieSecret,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+  	secure: true
+  }
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -167,7 +173,8 @@ app.post('/loginG2FA', ensureAuthenticated, passport.authenticate('totp'), funct
 
 app.get('/registerU2F', ensureAuthenticated, function(req,res){
 	try{
-		var registerRequest = u2f.startRegistration(app_id);
+		//var registerRequest = u2f.startRegistration(app_id);
+		var registerRequest = u2f.request(app_id);
 		req.session.registerRequest = registerRequest;
 		res.send(registerRequest);
 	} catch (err) {
@@ -179,11 +186,14 @@ app.get('/registerU2F', ensureAuthenticated, function(req,res){
 
 app.post('/registerU2F', ensureAuthenticated, function(req,res){
 	var registerResponse = req.body;
-	console.log(registerRequest);
+	//console.log("Registration response %j", registerResponse);
 	var registerRequest = req.session.registerRequest;
+	//console.log("Registration request %j", registerRequest);
 	var user = req.user.username;
 	try {
-		var registration = u2f.finishRegistration(registerRequest,registerResponse);
+		//var registration = u2f.finishRegistration(registerRequest,registerResponse);
+		var registration = u2f.checkRegistration(registerRequest,registerResponse);
+		//console.log("Processed registration %j", registration)
 		var reg = new U2F_Reg({username: user, deviceRegistration: registration });
 		reg.save(function(err,r){
 
@@ -206,9 +216,12 @@ app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 			res.status(400).send(err);
 		} else {
 			if (reg !== null) {
-				var signRequest = u2f.startAuthentication(app_id, reg.deviceRegistration);
+				//console.log("authU2F using - %j", reg.deviceRegistration);
+				//var signRequest = u2f.startAuthentication(app_id, reg.deviceRegistration);
+				var signRequest = u2f.request(app_id, reg.deviceRegistration.keyHandle);
 				req.session.signrequest = signRequest;
 				req.session.deviceRegistration = reg.deviceRegistration;
+				//console.log("sending signReq %j", signRequest);
 				res.send(signRequest);
 			}
 		}
@@ -220,9 +233,14 @@ app.post('/authenticateU2F', ensureAuthenticated, function(req,res){
 	var signRequest = req.session.signrequest;
 	var deviceRegistration = req.session.deviceRegistration;
 	try {
-		var result = u2f.finishAuthentication(signRequest, signResponse, deviceRegistration);
-		req.session.secondFactor = 'u2f';
-		res.send();
+		//var result = u2f.finishAuthentication(signRequest, signResponse, deviceRegistration);
+		var result = u2f.checkSignature(signRequest, signResponse, deviceRegistration.publicKey);
+		if (result.successful) {
+			req.session.secondFactor = 'u2f';
+			res.send();
+		} else {
+			res.status(400).send();
+		}
 	} catch (err) {
 		console.log(err);
 		res.status(400).send();
@@ -283,5 +301,6 @@ if (app_id.match(/^https:\/\/localhost:/)) {
 
 server.listen(port, host, function(){
 	console.log('App listening on  %s:%d!', host, port);
+	console.log("App_ID -> %s", app_id);
 });
 

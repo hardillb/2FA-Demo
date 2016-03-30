@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "A basic NodeJS/ExpressJS app that uses 2FA, both Google TOTP and Fido U2F",
   "licence": "Apache-2.0",
-  "repository":{
+  "repository": {
     "type": "git",
     "url": "https://github.com/hardillb/2FA-Demo"
   },
@@ -22,11 +22,11 @@
     "express-session": "^1.13.0",
     "mongoose": "^4.4.10",
     "morgan": "^1.7.0",
-    "node-u2f": "^0.3.0",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "passport-local-mongoose": "^4.0.0",
     "passport-totp": "0.0.2",
-    "thirty-two": "^1.0.1"
+    "thirty-two": "^1.0.1",
+    "u2f": "^0.1.2"
   }
 }

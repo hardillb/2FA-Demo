@@ -4,6 +4,8 @@
       <input type="text" id="username"/>
       <label for="password">Password:</label>
       <input type="password" id="password"/>
+      <label for="password">Password:</label>
+      <input type="password" id="passwordAgain"/>
       <button id="registerButton">Register</button>
       <script type="application/javascript">
       	var xhr = new XMLHttpRequest();
@@ -11,6 +13,12 @@
       	button.onclick = function(){
       		var username = document.getElementById('username').value;
       		var password = document.getElementById('password').value;
+                  var passwordAgain = document.getElementById('passwordAgain').value;
+
+                  if (password !== passwordAgain) {
+                    alert("Passwords don't match");
+                    return;
+                  }
 
       		var params = "username=" + username + "&password=" + password;
       		xhr.open('POST', '/newUser',true);

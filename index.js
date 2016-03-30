@@ -2,7 +2,6 @@ var http = require('http');
 var https = require('https');
 var fs = require('fs');
 var express = require('express');
-//var u2f = require('node-u2f');
 var u2f = require('u2f');
 var session = require('express-session');
 var bodyParser = require('body-parser');
@@ -173,7 +172,6 @@ app.post('/loginG2FA', ensureAuthenticated, passport.authenticate('totp'), funct
 
 app.get('/registerU2F', ensureAuthenticated, function(req,res){
 	try{
-		//var registerRequest = u2f.startRegistration(app_id);
 		var registerRequest = u2f.request(app_id);
 		req.session.registerRequest = registerRequest;
 		res.send(registerRequest);
@@ -186,14 +184,10 @@ app.get('/registerU2F', ensureAuthenticated, function(req,res){
 
 app.post('/registerU2F', ensureAuthenticated, function(req,res){
 	var registerResponse = req.body;
-	//console.log("Registration response %j", registerResponse);
 	var registerRequest = req.session.registerRequest;
-	//console.log("Registration request %j", registerRequest);
 	var user = req.user.username;
 	try {
-		//var registration = u2f.finishRegistration(registerRequest,registerResponse);
 		var registration = u2f.checkRegistration(registerRequest,registerResponse);
-		//console.log("Processed registration %j", registration)
 		var reg = new U2F_Reg({username: user, deviceRegistration: registration });
 		reg.save(function(err,r){
 
@@ -205,10 +199,7 @@ app.post('/registerU2F', ensureAuthenticated, function(req,res){
 	}
 });
 
-// function debug(req,res,next) {
-// 	console.log("DEBUG-" + req.body.code);
-// 	return next();
-// }
+
 
 app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 	U2F_Reg.findOne({username: req.user.username}, function(err, reg){
@@ -216,12 +207,9 @@ app.get('/authenticateU2F', ensureAuthenticated, function(req,res){
 			res.status(400).send(err);
 		} else {
 			if (reg !== null) {
-				//console.log("authU2F using - %j", reg.deviceRegistration);
-				//var signRequest = u2f.startAuthentication(app_id, reg.deviceRegistration);
 				var signRequest = u2f.request(app_id, reg.deviceRegistration.keyHandle);
 				req.session.signrequest = signRequest;
 				req.session.deviceRegistration = reg.deviceRegistration;
-				//console.log("sending signReq %j", signRequest);
 				res.send(signRequest);
 			}
 		}
@@ -233,7 +221,6 @@ app.post('/authenticateU2F', ensureAuthenticated, function(req,res){
 	var signRequest = req.session.signrequest;
 	var deviceRegistration = req.session.deviceRegistration;
 	try {
-		//var result = u2f.finishAuthentication(signRequest, signResponse, deviceRegistration);
 		var result = u2f.checkSignature(signRequest, signResponse, deviceRegistration.publicKey);
 		if (result.successful) {
 			req.session.secondFactor = 'u2f';
